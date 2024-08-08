@@ -1,9 +1,9 @@
-use std::str::FromStr;
+use std::{cell::RefCell, str::FromStr};
 use std::time::Instant;
 use chrono;
 use jsonpath_rust::JsonPath;
 use serde_json::{json, Value};
-use wasm_bindgen::prelude::*;
+// use wasm_bindgen::prelude::*;
 
 #[derive(Debug, Default)]
 pub struct IP {
@@ -101,10 +101,10 @@ pub fn splitter(json_object: Value, query: String) -> Vec<Value>{
     let mut final_object: Vec<Value> = Vec::new();
     // let mut json: Value = serde_wasm_bindgen::from_value(json_object).unwrap();
     let path = JsonPath::from_str(&query).unwrap();
-    
-    let slice_start = Instant::now();
+    let json = RefCell::new(json_object.clone());
+    // let slice_start = Instant::now();
     let slice = path.find_slice_ptr(&json_object);
-    let slice_time = slice_start.elapsed();
+    // let slice_time = slice_start.elapsed();
     // println!("getting slice {slice_time:?}");
 
     let query_slice: Vec<&str> = query.split('.').collect();
@@ -116,9 +116,11 @@ pub fn splitter(json_object: Value, query: String) -> Vec<Value>{
     // let mut json = json_object.clone();
     // let slice_obj = slice[0].clone().to_data();
 
-//try remove the logs object before looping
-
-let mut json = json_object.clone();
+//remove the logs object before looping
+    if let Some(obj) = json.borrow_mut().get_mut("payload") {
+        obj.as_object_mut().unwrap().remove(f_query);
+    }
+// let mut json = json_object.clone();
 // let slice_obj = slice[0].clone().to_data();
 
 match slice[0] {
@@ -126,22 +128,23 @@ match slice[0] {
         match value {
             Value::Array(arr) => {
                 if arr.len() == 0 {return vec![Value::Null]}
-                if arr.len() == 1 {return vec![json_object]}
+                if arr.len() == 1 {return vec![json.borrow_mut().take()]}
+                // println!("{}\n",arr.len());
                 // let loop_start = Instant::now();
                 for item in arr {
-                    if let Some(obj) = json.get_mut("payload") {
-                        obj.as_object_mut().unwrap().remove(f_query);
-
+                    if let Some(obj) = json.borrow_mut().get_mut("payload") {
                         // let insert = Instant::now();
                         obj.as_object_mut().unwrap().insert(f_query.to_string(), item.clone());
                         // println!("inserting took{:?}",insert.elapsed());
                     }
                     // let pushing = Instant::now();
-                    final_object.push(json.clone());
+                    final_object.push(json.clone().take());
                     // println!("pushing took {:?}", pushing.elapsed());
                 }
-                // println!("looping {:?}",loop_start.elapsed());
-                // println!("splitter took {:?}",start.elapsed());
+                // let loop_end = loop_start.elapsed();
+                // let end = start.elapsed();
+                // println!("looping {:?}",loop_end);
+                // println!("splitter took {:?}",end);
                 return final_object
             },
             _ => panic!("No array to split")
