@@ -96,16 +96,16 @@ impl SplitterNode {
 }
 
 // #[wasm_bindgen]
-pub fn splitter(mut json_object: Value, query: String) -> Vec<Value>{
-    let start = Instant::now();
+pub fn splitter(json_object: Value, query: String) -> Vec<Value>{
+    // let start = Instant::now();
     let mut final_object: Vec<Value> = Vec::new();
     // let mut json: Value = serde_wasm_bindgen::from_value(json_object).unwrap();
     let path = JsonPath::from_str(&query).unwrap();
     
     let slice_start = Instant::now();
-    let slice = path.find_slice(&json_object);
+    let slice = path.find_slice_ptr(&json_object);
     let slice_time = slice_start.elapsed();
-    println!("getting slice {slice_time:?}");
+    // println!("getting slice {slice_time:?}");
 
     let query_slice: Vec<&str> = query.split('.').collect();
     let f_query = query_slice[query_slice.len() -1];
@@ -113,38 +113,72 @@ pub fn splitter(mut json_object: Value, query: String) -> Vec<Value>{
     if slice.len() == 0 {
         panic!("Invalid JSONPath");
     }
-    
-    let slice_obj = slice[0].clone().to_data();
-    match slice_obj {
-        Value::Array(arr) => {
-            // if arr.len() == 0 {
-            //     return JsValue::from_str("");
-            // }
-            // if arr.len() == 1 {
-            //     return serde_wasm_bindgen::to_value(&json).unwrap();
-            // }
-            let loop_start = Instant::now();
-            for item in arr {
-                if let Some(obj) = json_object.get_mut("payload") {
-                    obj.as_object_mut().unwrap().remove(f_query);
-                    let insert = Instant::now();
-                    obj.as_object_mut().unwrap().insert(f_query.to_string(), vec![item].into());
-                    println!("inserting took: {:?}",insert.elapsed());
-                }
-                
-                let pushing = Instant::now();
-                final_object.push(json_object.clone());
-                println!("pushing took: {:?}",pushing.elapsed());
-            }
-            let loop_end = loop_start.elapsed();
-            println!("looping: {:?}",loop_end);
-            let end = start.elapsed();
-            println!("execution_time: {:?}",end);
-            return final_object;
-        }
+    // let mut json = json_object.clone();
+    // let slice_obj = slice[0].clone().to_data();
 
-        _ => panic!("No array to split")
-    }
+//try remove the logs object before looping
+
+let mut json = json_object.clone();
+// let slice_obj = slice[0].clone().to_data();
+
+match slice[0] {
+    jsonpath_rust::JsonPtr::Slice(value) => {
+        match value {
+            Value::Array(arr) => {
+                if arr.len() == 0 {return vec![Value::Null]}
+                if arr.len() == 1 {return vec![json_object]}
+                // let loop_start = Instant::now();
+                for item in arr {
+                    if let Some(obj) = json.get_mut("payload") {
+                        obj.as_object_mut().unwrap().remove(f_query);
+
+                        // let insert = Instant::now();
+                        obj.as_object_mut().unwrap().insert(f_query.to_string(), item.clone());
+                        // println!("inserting took{:?}",insert.elapsed());
+                    }
+                    // let pushing = Instant::now();
+                    final_object.push(json.clone());
+                    // println!("pushing took {:?}", pushing.elapsed());
+                }
+                // println!("looping {:?}",loop_start.elapsed());
+                // println!("splitter took {:?}",start.elapsed());
+                return final_object
+            },
+            _ => panic!("No array to split")
+        }
+    },
+    jsonpath_rust::JsonPtr::NewValue(_) => panic!("No array to split"),
+}
+    // match slice_obj {
+    //     Value::Array(arr) => {
+    //         // if arr.len() == 0 {
+    //         //     return JsValue::from_str("");
+    //         // }
+    //         // if arr.len() == 1 {
+    //         //     return serde_wasm_bindgen::to_value(&json).unwrap();
+    //         // }
+    //         let loop_start = Instant::now();
+    //         for item in arr {
+    //             if let Some(obj) = json_object.get_mut("payload") {
+    //                 obj.as_object_mut().unwrap().remove(f_query);
+    //                 let insert = Instant::now();
+    //                 obj.as_object_mut().unwrap().insert(f_query.to_string(), vec![item].into());
+    //                 println!("inserting took: {:?}",insert.elapsed());
+    //             }
+
+    //             let pushing = Instant::now();
+    //             final_object.push(json_object.clone());
+    //             println!("pushing took: {:?}",pushing.elapsed());
+    //         }
+    //         let loop_end = loop_start.elapsed();
+    //         println!("looping: {:?}",loop_end);
+    //         let end = start.elapsed();
+    //         println!("execution_time: {:?}",end);
+    //         return final_object;
+    //     }
+
+    //     _ => panic!("No array to split")
+    // }
 }
 
 // #[wasm_bindgen]

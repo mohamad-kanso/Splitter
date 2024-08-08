@@ -10,7 +10,7 @@ fn main() {
 
     let json: Value = serde_json::from_str(&data).unwrap();
     // let start = chrono::Utc::now();
-    let _test = splitter(json,"$.payload.logs".to_string());
+    let _test = test(json,"$.payload.logs".to_string());
     let end = start.elapsed();
     println!("\nfull time: {:?}",end);
     // let end = chrono::Utc::now();
