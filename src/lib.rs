@@ -96,24 +96,24 @@ impl SplitterNode {
 }
 
 // #[wasm_bindgen]
-pub fn splitter(mut json_object: Value, query: String) -> Vec<Value>{
+pub fn splitter(mut json_object: Value, query: String) -> Vec<Value> {
     let start = Instant::now();
     let mut final_object: Vec<Value> = Vec::new();
     // let mut json: Value = serde_wasm_bindgen::from_value(json_object).unwrap();
     let path = JsonPath::from_str(&query).unwrap();
-    
+
     let slice_start = Instant::now();
     let slice = path.find_slice(&json_object);
     let slice_time = slice_start.elapsed();
     println!("getting slice {slice_time:?}");
 
     let query_slice: Vec<&str> = query.split('.').collect();
-    let f_query = query_slice[query_slice.len() -1];
-    
+    let f_query = query_slice[query_slice.len() - 1];
+
     if slice.len() == 0 {
         panic!("Invalid JSONPath");
     }
-    
+
     let slice_obj = slice[0].clone().to_data();
     match slice_obj {
         Value::Array(arr) => {
@@ -126,25 +126,29 @@ pub fn splitter(mut json_object: Value, query: String) -> Vec<Value>{
             let loop_start = Instant::now();
             let obj = json_object.get_mut("payload").unwrap();
             obj.as_object_mut().unwrap().remove(f_query);
+            let object_map = obj.as_object().unwrap();
+
             for item in arr {
+                // let n = json_object.clone();
                 let insert = Instant::now();
-                obj.as_object_mut().unwrap().insert(f_query.to_string(), vec![item].into());
-                println!("inserting took: {:?}",insert.elapsed());
-                let pushing = Instant::now();
-                final_object.push(json_object.clone());
-                println!("pushing took: {:?}",pushing.elapsed());
+                let mut n = object_map.clone();
+                n.insert(f_query.to_string(), vec![item].into());
+                println!("inserting took: {:?}", insert.elapsed());
+                let pushing: Instant = Instant::now();
+
+                final_object.push(serde_json::Value::Object(n));
+                println!("pushing took: {:?}", pushing.elapsed());
             }
             let loop_end = loop_start.elapsed();
-            println!("looping: {:?}",loop_end);
+            println!("looping: {:?}", loop_end);
             let end = start.elapsed();
-            println!("execution_time: {:?}",end);
+            println!("execution_time: {:?}", end);
             return final_object;
         }
 
-        _ => panic!("No array to split")
+        _ => panic!("No array to split"),
     }
 }
-
 // #[wasm_bindgen]
 pub fn test (json_object: Value, query: String) -> i64 {
     let start = chrono::Utc::now();
