@@ -103,19 +103,21 @@ pub fn splitter(mut json_object: Value, query: String) -> Vec<Value>{
     let path = JsonPath::from_str(&query).unwrap();
     
     let slice_start = Instant::now();
-    let slice = path.find_slice(&json_object);
+    let slice = path.find(&json_object);
     let slice_time = slice_start.elapsed();
     println!("getting slice {slice_time:?}");
 
     let query_slice: Vec<&str> = query.split('.').collect();
     let f_query = query_slice[query_slice.len() -1];
     
-    if slice.len() == 0 {
+    if slice.as_array().is_some_and(|x| x.is_empty()) {
         panic!("Invalid JSONPath");
     }
+
     
-    let slice_obj = slice[0].clone().to_data();
-    match slice_obj {
+    
+    // let slice_obj = slice.as_array().unwrap()[0];
+    match &slice[0] {
         Value::Array(arr) => {
             // if arr.len() == 0 {
             //     return JsValue::from_str("");
@@ -128,16 +130,19 @@ pub fn splitter(mut json_object: Value, query: String) -> Vec<Value>{
             obj.as_object_mut().unwrap().remove(f_query);
             for item in arr {
                 let insert = Instant::now();
-                obj.as_object_mut().unwrap().insert(f_query.to_string(), vec![item].into());
+                obj.as_object_mut().unwrap().insert(f_query.to_string(), item.clone());
                 println!("inserting took: {:?}",insert.elapsed());
                 let pushing = Instant::now();
-                final_object.push(json_object.clone());
+                let mut new = serde_json::Map::new();
+                new.insert("payload".to_string(), obj.clone());
+                final_object.push(serde_json::Value::Object(new));
                 println!("pushing took: {:?}",pushing.elapsed());
             }
             let loop_end = loop_start.elapsed();
             println!("looping: {:?}",loop_end);
             let end = start.elapsed();
             println!("execution_time: {:?}",end);
+            // for item in &final_object{println!("{}", item)}
             return final_object;
         }
 
