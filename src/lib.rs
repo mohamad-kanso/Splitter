@@ -124,14 +124,12 @@ pub fn splitter(mut json_object: Value, query: String) -> Vec<Value>{
             //     return serde_wasm_bindgen::to_value(&json).unwrap();
             // }
             let loop_start = Instant::now();
+            let obj = json_object.get_mut("payload").unwrap();
+            obj.as_object_mut().unwrap().remove(f_query);
             for item in arr {
-                if let Some(obj) = json_object.get_mut("payload") {
-                    obj.as_object_mut().unwrap().remove(f_query);
-                    let insert = Instant::now();
-                    obj.as_object_mut().unwrap().insert(f_query.to_string(), vec![item].into());
-                    println!("inserting took: {:?}",insert.elapsed());
-                }
-                
+                let insert = Instant::now();
+                obj.as_object_mut().unwrap().insert(f_query.to_string(), vec![item].into());
+                println!("inserting took: {:?}",insert.elapsed());
                 let pushing = Instant::now();
                 final_object.push(json_object.clone());
                 println!("pushing took: {:?}",pushing.elapsed());
