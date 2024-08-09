@@ -1,5 +1,5 @@
 use std::{cell::RefCell, str::FromStr};
-use std::time::Instant;
+// use std::time::Instant;
 use chrono;
 use jsonpath_rust::JsonPath;
 use serde_json::{json, Value};
@@ -97,91 +97,50 @@ impl SplitterNode {
 
 // #[wasm_bindgen]
 pub fn splitter(json_object: Value, query: String) -> Vec<Value>{
-    // let start = Instant::now();
     let mut final_object: Vec<Value> = Vec::new();
-    // let mut json: Value = serde_wasm_bindgen::from_value(json_object).unwrap();
+    
     let path = JsonPath::from_str(&query).unwrap();
     let json = RefCell::new(json_object.clone());
-    // let slice_start = Instant::now();
+    
     let slice = path.find_slice_ptr(&json_object);
-    // let slice_time = slice_start.elapsed();
-    // println!("getting slice {slice_time:?}");
 
+    //getting last part of query in order to use it again when we want to insert
     let query_slice: Vec<&str> = query.split('.').collect();
     let f_query = query_slice[query_slice.len() -1];
     
+    //checking if we got a valid query
     if slice.len() == 0 {
         panic!("Invalid JSONPath");
     }
-    // let mut json = json_object.clone();
-    // let slice_obj = slice[0].clone().to_data();
 
-//remove the logs object before looping
+    //remove the query object before starting to modify the json
     if let Some(obj) = json.borrow_mut().get_mut("payload") {
         obj.as_object_mut().unwrap().remove(f_query);
     }
-// let mut json = json_object.clone();
-// let slice_obj = slice[0].clone().to_data();
 
-match slice[0] {
-    jsonpath_rust::JsonPtr::Slice(value) => {
-        match value {
-            Value::Array(arr) => {
-                if arr.len() == 0 {return vec![Value::Null]}
-                if arr.len() == 1 {return vec![json.borrow_mut().take()]}
-                // println!("{}\n",arr.len());
-                // let loop_start = Instant::now();
-                for item in arr {
-                    if let Some(obj) = json.borrow_mut().get_mut("payload") {
-                        // let insert = Instant::now();
-                        obj.as_object_mut().unwrap().insert(f_query.to_string(), item.clone());
-                        // println!("inserting took{:?}",insert.elapsed());
+    match slice[0] {
+        jsonpath_rust::JsonPtr::Slice(value) => {
+            match value {
+                Value::Array(arr) => {
+                    //check if there is an array to split
+                    if arr.len() == 0 {return vec![Value::Null]}
+                    if arr.len() == 1 {return vec![json.borrow_mut().take()]}
+                    
+                    //loop on the splitted array and push modified json to final object
+                    for item in arr {
+                        if let Some(obj) = json.borrow_mut().get_mut("payload") {
+                            obj.as_object_mut().unwrap().insert(f_query.to_string(), item.clone());
+                        }
+                        final_object.push(json.clone().take());
                     }
-                    // let pushing = Instant::now();
-                    final_object.push(json.clone().take());
-                    // println!("pushing took {:?}", pushing.elapsed());
-                }
-                // let loop_end = loop_start.elapsed();
-                // let end = start.elapsed();
-                // println!("looping {:?}",loop_end);
-                // println!("splitter took {:?}",end);
-                return final_object
-            },
-            _ => panic!("No array to split")
-        }
-    },
-    jsonpath_rust::JsonPtr::NewValue(_) => panic!("No array to split"),
-}
-    // match slice_obj {
-    //     Value::Array(arr) => {
-    //         // if arr.len() == 0 {
-    //         //     return JsValue::from_str("");
-    //         // }
-    //         // if arr.len() == 1 {
-    //         //     return serde_wasm_bindgen::to_value(&json).unwrap();
-    //         // }
-    //         let loop_start = Instant::now();
-    //         for item in arr {
-    //             if let Some(obj) = json_object.get_mut("payload") {
-    //                 obj.as_object_mut().unwrap().remove(f_query);
-    //                 let insert = Instant::now();
-    //                 obj.as_object_mut().unwrap().insert(f_query.to_string(), vec![item].into());
-    //                 println!("inserting took: {:?}",insert.elapsed());
-    //             }
-
-    //             let pushing = Instant::now();
-    //             final_object.push(json_object.clone());
-    //             println!("pushing took: {:?}",pushing.elapsed());
-    //         }
-    //         let loop_end = loop_start.elapsed();
-    //         println!("looping: {:?}",loop_end);
-    //         let end = start.elapsed();
-    //         println!("execution_time: {:?}",end);
-    //         return final_object;
-    //     }
-
-    //     _ => panic!("No array to split")
-    // }
+                
+                    return final_object
+                },
+                _ => panic!("No array to split")
+            }
+        },
+        jsonpath_rust::JsonPtr::NewValue(_) => panic!("No array to split"),
+    }
 }
 
 // #[wasm_bindgen]
