@@ -24,9 +24,9 @@ async function main() {
     let query = ('$.payload.logs');
 
     // let start = microtime.now();
-    // // for (let i = 0; i<1000; i++) {
-    //     let result = wasm.splitter(json,query);
-    // // }
+    // // // for (let i = 0; i<1000; i++) {
+        let result = wasm.splitter2(json,query);
+    // // // }
     // let end = microtime.now();
 
     // let j_result = mapToObject(result);
@@ -35,8 +35,8 @@ async function main() {
     // // console.log(result);
     // // console.log();
     // // console.log(j_result);
-    let execution = wasm.test(json,query);
-    console.log(`wasm execution time: ` + execution + `ms`);
+    // let execution = wasm.test2(json,query);
+    // console.log(`wasm execution time: ` + execution + `ms`);
     console.log();
     // console.log(`average execution time is: ` + execution/1000 + `ms`);
     // console.log(string);

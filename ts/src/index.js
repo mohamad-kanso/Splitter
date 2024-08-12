@@ -49,7 +49,7 @@ function main() {
         // console.log(result);
         console.log(`execution time: ` + execution + `ms`);
         console.log();
-        console.log(`average execution time is: ` + execution / 1000 + `ms`);
+        // console.log(`average execution time is: ` + execution/10000 + `ms`);
     }
     catch (error) {
         if (error instanceof Error) {
