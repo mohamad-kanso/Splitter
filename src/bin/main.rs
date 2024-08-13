@@ -1,24 +1,15 @@
-use std::{fs, time::Instant};
-
+use std::{fs, str::FromStr};
+use jsonpath_rust::JsonPath;
 use serde_json::Value;
 use splitter_wasm::*;
 
-
 fn main() {
-    let start = Instant::now();
     let data = fs::read_to_string("payload.json").unwrap();
-
     let json: Value = serde_json::from_str(&data).unwrap();
-    // let start = chrono::Utc::now();
-    let test = splitter1(json,"$.payload.logs".to_string());
-    let end = start.elapsed();
-    // for item in test {
-    //     println!("{}\n",item)
-    // }
-    println!("\nfull time: {:?}",end);
-    // let end = chrono::Utc::now();
 
-    // let execution = end - start;
-    // println!("execution time in rust is: {}ms",test);
-    
+    let start = chrono::Utc::now();
+    let _test = splitter2(json,"$.payload.logs",JsonPath::from_str("$.payload.logs").expect("failed in getting jsonpath"));
+
+    println!("\nfull time: {:?}",(chrono::Utc::now()-start).to_std().unwrap());
+    // println!("{}",test);
 }

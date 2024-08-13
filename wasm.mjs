@@ -1,6 +1,8 @@
 import * as wasm from "./pkg/splitter_wasm.js";
 import microtime from "microtime";
 import {promises as fs} from 'fs';
+import { SplitterNode } from "./pkg/splitter_wasm.js";
+import cloneDeep from 'lodash.clonedeep';
 
 function mapToObject(map) {
     if (map instanceof Map) {
@@ -16,30 +18,25 @@ function mapToObject(map) {
     }
 }
 
-
 async function main() {
     let data = await fs.readFile('./payload.json');
     let json = JSON.parse(data);
 
     let query = ('$.payload.logs');
-
-    // let start = microtime.now();
-    // // // for (let i = 0; i<1000; i++) {
-        let result = wasm.splitter2(json,query);
-    // // // }
-    // let end = microtime.now();
-
+    let node = new SplitterNode(query);
+    let start = microtime.now();
+    for (let i = 0; i<1000; i++) {
+        let result = node.execute(json);
+    }
+    let end = microtime.now();
+    let execution = (end-start)/1000;
     // let j_result = mapToObject(result);
     // let string  = JSON.stringify(j_result);
-    // let execution = (end-start)/1000;
     // // console.log(result);
-    // // console.log();
     // // console.log(j_result);
-    // let execution = wasm.test2(json,query);
-    // console.log(`wasm execution time: ` + execution + `ms`);
-    console.log();
-    // console.log(`average execution time is: ` + execution/1000 + `ms`);
     // console.log(string);
+    console.log(`wasm execution time: ` + execution + `ms`);
+    console.log();
 }
 
 main()

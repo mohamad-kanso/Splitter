@@ -41,12 +41,12 @@ function main() {
         const data = JSON.parse(jsonData);
         let query = '$.payload.logs';
         let start = microtime_1.default.now();
-        for (let i = 0; i < 1000; i++) {
+        // for (let i = 0; i < 1000; i++) {
             let result = splitter((0, lodash_clonedeep_1.default)(data), query);
-        }
+        // }
         let end = microtime_1.default.now();
         let execution = (end - start) / 1000;
-        // console.log(result);
+        console.log(result);
         console.log(`execution time: ` + execution + `ms`);
         console.log();
         // console.log(`average execution time is: ` + execution/10000 + `ms`);
