@@ -19,15 +19,15 @@ function mapToObject(map) {
 }
 
 async function main() {
-    let data = await fs.readFile('./payload.json');
+    let data = await fs.readFile('./nested_payload.json');
     let json = JSON.parse(data);
 
-    let query = ('$.payload.logs');
+    let query = ('$.payload.block.transaction.receipt.logs');
     let node = new SplitterNode(query);
     let start = microtime.now();
-    for (let i = 0; i<1000; i++) {
+    // for (let i = 0; i<1000; i++) {
         let result = node.execute(json);
-    }
+    // }
     let end = microtime.now();
     let execution = (end-start)/1000;
     // let j_result = mapToObject(result);

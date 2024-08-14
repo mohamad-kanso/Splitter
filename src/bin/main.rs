@@ -8,7 +8,11 @@ fn main() {
     let json: Value = serde_json::from_str(&data).unwrap();
 
     let start = chrono::Utc::now();
-    let _test = splitter2(json,"$.payload.logs",JsonPath::from_str("$.payload.logs").expect("failed in getting jsonpath"));
+    let test = splitter(json,
+        "$.payload.logs",
+        JsonPath::from_str("$.payload.logs")
+        .expect("failed in getting jsonpath"));
+    println!("{}",test);
 
     println!("\nfull time: {:?}",(chrono::Utc::now()-start).to_std().unwrap());
     // println!("{}",test);

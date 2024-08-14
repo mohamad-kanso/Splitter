@@ -1,7 +1,7 @@
 use std::{fs, str::FromStr};
 use chrono;
 use jsonpath_rust::JsonPath;
-use serde_json::{json, Map, Value};
+use serde_json::{json, Value};
 use serde_wasm_bindgen::from_value;
 use serde_wasm_bindgen::Error;
 use wasm_bindgen::JsValue;
@@ -68,7 +68,7 @@ impl SplitterNode {
     }
 
     fn _execute(&self, data: Value) -> Option<Vec<(i32,Value)>> {
-        let result = splitter2(data, &self.string_path, self.path.clone());
+        let result = splitter(data, &self.string_path, self.path.clone());
         if result.as_array().unwrap().is_empty() {
             return None;
         }
@@ -99,46 +99,40 @@ pub fn get_inputs() -> (Value,String) {
 }
 
 // #[wasm_bindgen]
-pub fn splitter2(mut json_object: Value, query: &str, path: JsonPath) -> Value {
-    // let start = chrono::Utc::now();
+pub fn splitter(json_object: Value, query: &str, path: JsonPath) -> Value {
 
 //getting the object found at the path as json value
     let slice = path.find(&json_object);
-    // console_log!("getting slice {:?}", (chrono::Utc::now() - start).to_std().unwrap());
     
 //checking if the slice is valid
     if slice.as_array().unwrap().is_empty() {
         panic!("Invalid JSONPath: no matching elements found");
     }
-    // console_log!("checking slice: {:?}",(chrono::Utc::now()-start).to_std().unwrap());
 
 //splitting the query in order to be used in the insertion
+    let mut depths: Vec<&str> = query.split('.').collect();
+    depths.remove(0);
     let f_query = query.split('.').last().expect("Invalid query: empty string");
-    // console_log!("splitting: {:?}",(chrono::Utc::now() - start).to_std().unwrap());
-    
-//getting the payload which is going to be modified
-    let payload = json_object.get_mut("payload")
-        .and_then(Value::as_object_mut)
-        .expect("Invalid JSON structure: 'payload' not found or not an object");
-    // console_log!("getting payload {:?}", (chrono::Utc::now() - start).to_std().unwrap());
 
 //getting the slice in the form of an array of json object elements
     let arr = slice[0].as_array()
         .expect("JSONPath result is not an array");
 
 //removing the old queried part and initating the looping on the elements of the sliced array        
-    payload.remove(f_query);
     let final_obj: Vec<Value> = arr.iter().map(|item| {
-        let mut new_map = payload.clone();
-        new_map.insert(f_query.to_string(), item.clone());
-        // console_log!("inserting took {:?}", (chrono::Utc::now() - start).to_std().unwrap());
-
-        Value::Object(Map::from_iter([
-            ("payload".to_string(), Value::Object(new_map))
-        ]))
+        let mut json_copy = json_object.clone();
+        let mut map_copy = json_copy
+            .as_object_mut().unwrap();
+        for &depth in &depths[..depths.len()-1] {
+            map_copy = map_copy.get_mut(depth)
+                .and_then(Value::as_object_mut)
+                .unwrap();
+        }
+        map_copy.remove(f_query);
+        map_copy.insert(f_query.to_string(), item.clone());
+        json_copy
     }).collect();
-    // console_log!("looping: {:?}",(chrono::Utc::now() - start).to_std().unwrap());
-    // console_log!("wasm_bindgen: {:?}", (chrono::Utc::now() - start).to_std().unwrap());
-    // console_log!("execution: {:?}", (chrono::Utc::now() - start).to_std().unwrap());
+
+//finally return the final object in the correct format
     serde_json::Value::Array(final_obj)
 }
